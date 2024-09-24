@@ -1,2 +1,45 @@
-<h1>Yeah</h1>
-<h2>Calories: {{ calories }}</h2>
+{% load humanize %}
+<h1>Physiological output</h1>
+<hr>
+
+<div class="fw-bold">Liver and leg muscle mass and glycogen storage</div>
+<p class="text-white mb-0">{{ liver_mass|floatformat:"2" }} kg liver storing {{ liver_glycogen_storage|floatformat:"0" }} kcals glycogen</p>
+<p class="text-white mt-0">{{ leg_muscle_mass|floatformat:"2" }} kg leg muscles storing {{ leg_muscle_glycogen_storage|floatformat:"0"|intcomma }} kcals glycogen</p>
+
+<div class="fw-bold">Total endogenous glycogen storage</div>
+<p class="text-white mt-0">{{ total_endogenous_glycogen_storage|floatformat:"0"|intcomma }} kcals glycogen</p>
+
+<h1>Simulation output</h1>
+<hr>
+<p>Over the course of the distance of {{ distance|floatformat:"1"|intcomma }} km the runner will burn about {{ calories_burned|floatformat:"0"|intcomma }} kcals based on the given bodyweight of {{ bodyweight|floatformat:"1"|intcomma }} kg. The total energy expenditure is thus assumed to be 1 kcal per kg of bodyweight per km, i.e. independent of pace.</p>
+<div class="table-responsive">
+
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th scope="col">VO<sub>2</sub> (mL O<sub>2</sub> min<sup>-1</sup> kg<sup>-1</sup>)</th>
+        <th scope="col">% of VO<sub>2</sub>max</th>
+        <th scope="col">Pace (min/km)</th>
+        <th scope="col">Finishing time</th>
+        <th scope="col">Glycogen consumption (kcals)</th>
+        <th scope="col">Residual glycogen (kcals)</th>
+        <th scope="col">Interpretation</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vo2, results in sim_results.items %}
+      <tr>
+        <td>{{ vo2|floatformat:"1"|intcomma }}</td>
+        <td>{{ results.percent_vo2_max|floatformat:"0"|intcomma }}</td>
+        <td>{{ results.pace }}</td>
+        <td>{{ results.finishing_time }}</td>
+        <td>{{ results.glycogen_consumed|floatformat:"0"|intcomma }}</td>
+        <td class="{% if results.residual_glycogen < 0 %}text-danger{% elif results.residual_glycogen < glycogen_buffer %}text-warning{% endif %}">
+          {{ results.residual_glycogen|floatformat:"0"|intcomma }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+  
