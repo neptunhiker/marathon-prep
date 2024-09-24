@@ -1,11 +1,83 @@
 {% extends './base.html' %}
+{% load crispy_forms_tags %}
 
 {% block content %}
+<script src="https://unpkg.com/htmx.org@1.6.1"></script>
 
-<div class="container">
-
-  <h1>Dashboard</h1>
+<div class="container my-5">
+  <div class="row">
+    <div class="col col-lg-6">
+      <h1>Input</h1>
+      
+      <form method="post">
+        {% csrf_token %}
+        <div style="display: block;">
+          <label for="vo2_max" style="display: block;">VO<sub>2</sub>max</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="0" max="100" value="56" id="vo2_max" name="vo2_max" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> mL O<sub>2</sub> min<sup>-1</sup> kg<sup>-1</sup></span>
+          </div>
+          <small id="vo2_maxHelp" class="form-text text-muted" style="display: block;">Enter the runner's VO<sub>2</sub>max.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="bodyweight" style="display: block;">Bodyweight</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="40" value="73" id="bodyweight" name="bodyweight" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> kg</span>
+          </div>
+          <small id="bodyweightHelp" class="form-text text-muted" style="display: block;">Enter the runner's bodyweight.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="distance" style="display: block;">Distance</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="1" max="100" value="43" id="distance" name="distance" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> km</span>
+          </div>
+          <small id="distanceHelp" class="form-text text-muted" style="display: block;">Enter the distance to be run.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="RelativeLiverMass" style="display: block;">Relative Liver Mass</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="1" max="4" value="2.5" step="0.1" id="RelativeLiverMass" name="RelativeLiverMass" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> %</span>
+          </div>
+          <small id="RelativeLiverMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative liver mass.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="liverGlycogenDensity" style="display: block;">Liver Glycogen Density</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="180" max="500" value="360" id="liverGlycogenDensity" name="liverGlycogenDensity" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> kcals</span>
+          </div>
+          <small id="liverGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's liver glycogen density.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="RelativeLegMuscleMass" style="display: block;">Relative Leg Muscle Mass</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="15" max="40" value="21" id="RelativeLegMuscleMass" name="RelativeLegMuscleMass" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> %</span>
+          </div>
+          <small id="RelativeLegMuscleMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative leg muscle mass.</small>
+        </div>
+        <div style="display: block;" class="my-3">
+          <label for="LegMuscleGlycogenDensity" style="display: block;">Leg Muscle Glycogen Density</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="40" max="150" value="80" id="LegMuscleGlycogenDensity" name="LegMuscleGlycogenDensity" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> kcals</span>
+          </div>
+          <small id="LegMuscleGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's leg muscle glycogen density.</small>
+        </div>
+      </form>
+    </div>
+    
+    
+    
+    <div class="col col-lg-6">
+      <h1>Output</h1>
+      <div id="simultion-results-display"></div>
+      <div id="loading-indicator" style="display: none;">Loading...</div>
+    </div>
+  </div>
 </div>
-
 
 {% endblock %}
