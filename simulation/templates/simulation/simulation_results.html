@@ -23,9 +23,10 @@
 
 <h1 class="mt-4 mb-0">Simulation output</h1>
 <hr class="mt-1">
-<p>Over the course of the distance of {{ distance|floatformat:"1"|intcomma }} km the runner will burn about {{ calories_burned|floatformat:"0"|intcomma }} kcals based on the given bodyweight of {{ bodyweight|floatformat:"1"|intcomma }} kg. The total energy expenditure is thus assumed to be 1 kcal per kg of bodyweight per km, i.e. independent of pace.</p>
+<p>Over the course of the distance of {{ distance|floatformat:"1"|intcomma }} km the runner will burn about {{ calories_burned|floatformat:"0"|intcomma }} kcals based on the given bodyweight of {{ bodyweight|floatformat:"1"|intcomma }} kg. The total energy expenditure is thus assumed to be 1 kcal per kg of bodyweight per km, i.e. independent of pace. <span class="fw-bold" data-bs-toggle="tooltip" title="See Margaria R, Cerretelli P, Aghemo P, Sassi G. Energy cost of running. Journal of Applied Physiology. 1963;18:367–370."><i class="fas fa-solid fa-lightbulb"></i></span></p>
 
-<div class="row">
+
+<div class="row mb-0">
   <div class="col">
     <div class="fw-bold">Pace</div>
     <p class="text-white mt-0">{{ pace }} min/km</p>
@@ -49,11 +50,11 @@
     <p class="text-white mt-0">{{ calories_burned|floatformat:"0"|intcomma }} kcals</p>
   </div>
   <div class="col">
-    <div class="fw-bold">Glycogen expenditure</div>
+    <div class="fw-bold">Abs. glycogen expenditure</div>
     <p class="text-white mt-0">{{ glycogen_consumed|floatformat:"0"|intcomma }} kcals</p>
   </div>
   <div class="col">
-    <div class="fw-bold">Glycogen / energy expenditure</div>
+    <div class="fw-bold">% glycogen expenditure <span class="fw-bold" data-bs-toggle="tooltip" title="The percent of glycogen expenditure related to total energy expenditure depends on the intensity of the run as measured by the ratio of VO2 to VO2_max. The relative glycogen expenditure is obtained by fitting a quadratric curve to the results of Romijn AJ, Coyle EF, Sidossis LS, Gastaldelli A, Horowitz JF, et al. Regulation of endogenous fat and carbohydrate metabolism in relation to exercise intensity and duration. American Journal of Physiology-Endocrinology And Metabolism 1993;265:E380–E391."><i class="fas fa-solid fa-lightbulb"></i></span></div>
     <p class="text-white mt-0">{{ percent_glycogen_consumed|floatformat:"1"|intcomma }} %</p>
   </div>
   <div class="col">
@@ -61,6 +62,11 @@
     <p class="text-white mt-0">{{ residual_glycogen|floatformat:"0"|intcomma }} kcals</p>
   </div>
 </div>
+
+<div class="my-0 py-0">
+  {{ chart|safe }}
+</div>
+
 <h1 class="mt-4 mb-0">Interpretation</h1>
 <hr class="mt-1">
 <div class="row align-items-center">
@@ -70,7 +76,7 @@
     {% elif indication == "negative" %}
       <i class="h1 fas fa-times-circle"></i> <!-- Font Awesome negative icon -->
     {% elif indication == "positive" %}
-      <i class="h1 fas fa-check-circle"></i> <!-- Font Awesome checkmark icon -->
+      <i class="h1 fas fa-solid fa-heart"></i> <!-- Font Awesome checkmark icon -->
     {% endif %}
   </div>
   <div class="col-10">

@@ -5,26 +5,30 @@
 {% block content %}
 <script src="https://unpkg.com/htmx.org@1.6.1"></script>
 
-<div class="container my-5">
-  <div class="row">
-    <div class="col col-lg-3">
+<div class="container mt-4 mb-5">
+  <div class="row gap-2">
+    <div class="col-12 col-md-3 shadow p-3">
       <form method="post">
         {% csrf_token %}
         <h1>Input</h1>
-        <div style="display: block;" class="my-3">
-          <label for="paceRange" style="display: block;">Target pace</label>
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
+          <label for="paceRange" style="display: block;">Select target pace</label>
           <input type="range" min="2.5" max="7" value="5.0" step="0.01" id="paceRange" name="paceRange" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" hx-vals='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
           <div id="sliderValue">5:00 min/km</div>
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="vo2_max" style="display: block;">VO<sub>2</sub>max</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="0" max="100" value="56" id="vo2_max" name="vo2_max" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> mL O<sub>2</sub> min<sup>-1</sup> kg<sup>-1</sup></span>
           </div>
-          <small id="vo2_maxHelp" class="form-text text-muted" style="display: block;">Enter the runner's VO<sub>2</sub>max.</small>
+          <small id="vo2_maxHelp" class="form-text text-muted" style="display: block;">Enter the runner's VO<sub>2</sub>max. <span class="fw-bold" data-bs-toggle="tooltip" title="VO2 max (also maximal oxygen consumption, maximal oxygen uptake or maximal aerobic capacity) is the maximum rate of oxygen consumption attainable during physical exertion. It is measured in milliliters of oxygen consumed per minute per kilogram bodyweight."><i class="fas fa-solid fa-lightbulb"></i></span></small>
+          
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="bodyweight" style="display: block;">Bodyweight</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="40" value="73" id="bodyweight" name="bodyweight" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
@@ -32,7 +36,8 @@
           </div>
           <small id="bodyweightHelp" class="form-text text-muted" style="display: block;">Enter the runner's bodyweight.</small>
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="distance" style="display: block;">Distance</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="1" max="100" value="43" id="distance" name="distance" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
@@ -40,51 +45,58 @@
           </div>
           <small id="distanceHelp" class="form-text text-muted" style="display: block;">Enter the distance to be run.</small>
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="RelativeLiverMass" style="display: block;">Relative Liver Mass</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="1" max="4" value="2.5" step="0.1" id="RelativeLiverMass" name="RelativeLiverMass" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> %</span>
           </div>
-          <small id="RelativeLiverMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative liver mass.</small>
+          <small id="RelativeLiverMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative liver mass. <span class="fw-bold" data-bs-toggle="tooltip" title="The liver typically accounts for about 2-3% of an individual's body weight."><i class="fas fa-solid fa-lightbulb"></i></span></small>
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="liverGlycogenDensity" style="display: block;">Liver Glycogen Density</label>
           <div style="display: flex;">
-            <input class="custom-css-input-field" type="number" min="180" max="500" value="360" id="liverGlycogenDensity" name="liverGlycogenDensity" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <input class="custom-css-input-field" type="number" min="150" max="360" value="195" id="liverGlycogenDensity" name="liverGlycogenDensity" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> kcals</span>
           </div>
-          <small id="liverGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's liver glycogen density.</small>
+          <small id="liverGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's liver glycogen density. <span class="fw-bold" data-bs-toggle="tooltip" title="The liver typically stores glycogen at a density of approximately 195 kcals per kilogram, and is capable of storage at a maximum density of approximately 360 kcals per kilogram. Therefore, a 1.8-kg liver typically stores approximately 88 g of carbohydrate and can store at most approximately 162 g, corresponding to approximately 350 and 650 kcal, respectively. "><i class="fas fa-solid fa-lightbulb"></i></span></small>
+          
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="RelativeLegMuscleMass" style="display: block;">Relative Leg Muscle Mass</label>
           <div style="display: flex;">
-            <input class="custom-css-input-field" type="number" min="15" max="40" value="21" id="RelativeLegMuscleMass" name="RelativeLegMuscleMass" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <input class="custom-css-input-field" type="number" min="15" max="40" value="20.7" id="RelativeLegMuscleMass" name="RelativeLegMuscleMass" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> %</span>
           </div>
-          <small id="RelativeLegMuscleMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative leg muscle mass.</small>
+          <small id="RelativeLegMuscleMassHelp" class="form-text text-muted" style="display: block;">Enter the runner's relative leg muscle mass. <span class="fw-bold" data-bs-toggle="tooltip" title="Several studies have examined leg muscle mass in adult populations and found that it exhibits variability in relation to total body mass, constituting approximately 18.0-22.5% and 14.0–27.5% of total body mass in adult women and men, respectively."><i class="fas fa-solid fa-lightbulb"></i></span></small>
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="LegMuscleGlycogenDensity" style="display: block;">Leg Muscle Glycogen Density</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="40" max="150" value="80" id="LegMuscleGlycogenDensity" name="LegMuscleGlycogenDensity" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> kcals</span>
           </div>
-          <small id="LegMuscleGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's leg muscle glycogen density.</small>
+          <small id="LegMuscleGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's leg muscle glycogen density. <span class="fw-bold" data-bs-toggle="tooltip" title="Biopsy studies of leg muscles indicate that while the muscles of trained athletes typically store glycogen at a density of approximately 80 kcals per kilogram, glycogen loading protocols can increase that density to a maximum of approximately 144 kcals per kilogram."><i class="fas fa-solid fa-lightbulb"></i></span></small>
+          
         </div>
-        <div style="display: block;" class="my-3">
+        <hr class="my-2">
+        <div style="display: block;" class="my-0">
           <label for="AdditionalCarbIntake" style="display: block;">Carb intake during race</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="0" max="300" value="0" id="AdditionalCarbIntake" name="AdditionalCarbIntake" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
             <span class="ms-2"> g</span>
           </div>
-          <small id="AdditionalCarbIntakeHelp" class="form-text text-muted" style="display: block;">Enter the additional carb intake (e.g. through gels) during the race.</small>
+          <small id="AdditionalCarbIntakeHelp" class="form-text text-muted" style="display: block;">Enter the additional carb intake (e.g. through gels) during the race. <span class="fw-bold" data-bs-toggle="tooltip" title="To simplify the simulation, the total carbohydrate intake is assumed to take place at predefined discrete points in time. For races with less than or equal to 10 km the carbohydrate intake is assumed to take place at the halfway point. For races longer than 10 km the carbohydrate intake is assumed to be spread out evenly every five kilometers, e.g. for a marathon at kilometers, 5, 10, 15, 20, 25, 30, 35 and 40."><i class="fas fa-solid fa-lightbulb"></i></span></small>
         </div>
       </form>
     </div>
   
   
-    <div class="col col-lg-9">
+    <div class="col-12 col-md-8 shadow p-3">
       <div id="simultion-results-display"></div>
       <div id="loading-indicator" style="display: none;">Loading...</div>
     </div>

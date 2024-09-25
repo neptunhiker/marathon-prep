@@ -1,11 +1,15 @@
 import datetime 
 import numpy as np
+import pandas as pd
 
 from django.http import HttpResponse
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.shortcuts import render
+
+import plotly.graph_objects as go
+import plotly.offline as opy
 
 from .import calculations, runners
 
@@ -16,9 +20,65 @@ class AboutView(TemplateView):
     template_name = "simulation/about.html"
     
 
+def create_chart(df: pd.DataFrame, glycogen_buffer: float) -> go.Figure:
+    # Create the plot
+    trace = go.Scatter(x=df['Distance'], y=df['GlycogenLevelsPlusCarbs'], mode='lines', name='Glycogen storage')
+    # Find the minimum y-value and the maximum x-value
+    min_y = min(df['GlycogenLevelsPlusCarbs'].min() * 1.5, 0)
+    max_x = df['Distance'].max()
+
+    layout = go.Layout(
+        hovermode='closest',
+        plot_bgcolor='rgba(0,0,0,0)',  # this makes the plot area transparent
+        paper_bgcolor='rgba(0,0,0,0)',  # this makes the area around the plot transparent
+        xaxis=dict(
+            title='km',
+            showline=True,
+        ),
+        yaxis=dict(
+            title='Glycogen storage in kcals',
+            range=[min_y, df['GlycogenLevelsPlusCarbs'].max() * 1.1]  # this sets the y-axis range from min_y to the maximum y-value
+        ),
+        font=dict(
+            color='white'
+        ),
+        shapes=[
+            # This creates a rectangle from x=0 to x=max_x and from y=0 to y=min_y
+            dict(
+                type='rect',
+                xref='x',
+                yref='y',
+                x0=0,
+                y0=0,
+                x1=max_x,
+                y1=glycogen_buffer,
+                fillcolor='rgba(255, 255, 0, 0.5)',  # this makes the fill color red with 50% opacity
+                line=dict(width=0),  # this makes the border line invisible
+                layer='below',
+            ),
+            dict(
+                type='rect',
+                xref='x',
+                yref='y',
+                x0=0,
+                y0=0,
+                x1=max_x,
+                y1=min_y,
+                fillcolor='rgba(255, 0, 0, 0.5)',  # this makes the fill color red with 50% opacity
+                line=dict(width=0),  # this makes the border line invisible
+                layer='below',
+            ),
+        ],
+    )
+    figure = go.Figure(data=[trace], layout=layout)
+
+    # Convert the plot to HTML
+    plot_div = opy.plot(figure, auto_open=False, output_type='div')
+    
+    return plot_div
+
 @require_POST
 def update_dashboard(request):
-    print("calling")
     slider_pace_in_min = float(request.POST.get('paceRange', 0))
     bodyweight = float(request.POST.get('bodyweight', 0))
     glycogen_buffer = bodyweight * 3 * 4  # 3g per kg of bodyweight (* 4 for kcals)
@@ -51,7 +111,7 @@ def update_dashboard(request):
         interpretation = f"It is highly improbable that the race can be completed within the predicted finishing time of {finishing_time}, as the residual glycogen level at the end of the race is negative. This strongly suggests that the runner is likely to experience 'hitting the wall,' leading to substantial performance decline during the race, which would prevent achieving the projected time. A reduction in pace is advised to lower the rate of glycogen depletion throughout the race."
     elif residual_glycogen <= glycogen_buffer:
         indication = "warning"
-        interpretation = f"There is uncertainty regarding the ability to complete the race within the predicted finishing time of {finishing_time}, as residual glycogen levels are below 3g per kg of body weight by the end of the race (equivalent to {round(glycogen_buffer)} kcals). Studies indicate that performance may deteriorate prior to full glycogen depletion. It is recommended to either reduce the pace to conserve glycogen stores or increase glycogen availability through higher intial endogenous glycogen levels or carbohydrate supplementation during the race."
+        interpretation = f"There is uncertainty regarding the ability to complete the race within the predicted finishing time of {finishing_time}, as residual glycogen levels are below 3g per kg of body weight by the end of the race (equivalent to {round(glycogen_buffer)} kcals). Studies indicate that performance begins to decline before glycogen stores are completely exhausted, even in motivated endurance runners, at leg muscle glycogen concentrations approaching 3 to 5g per kg of body weight (see Karlsson J, Saltin B. Diet, muscle glycogen, and endurance performance. Journal of Applied Physiology. 1971;31:203–206.). It is recommended to either reduce the pace to conserve glycogen stores or increase glycogen availability through higher intial endogenous glycogen levels or carbohydrate supplementation during the race."
         if intensity > 0.8:
             additional_info = f"Additionally, the race is planned to be run at an intensity of {round(intensity * 100, 1)} %, as measured by the percentage of oxygen uptake (VO2) relative to maximal oxygen uptake capacity (VO2_max) which represents a considerable physiological challenge."
             interpretation = f"{interpretation} {additional_info}"
@@ -63,7 +123,15 @@ def update_dashboard(request):
             additional_info = f"One contributing factor may be the intensity at which the race is planned to be run. An intensity of {round(intensity * 100, 1)} %, as measured by the percentage of oxygen uptake (VO2) relative to maximal oxygen uptake capacity (VO2_max), represents a considerable physiological challenge."
             interpretation = f"{interpretation} {additional_info}"
 
-
+    df = calculations.time_series(
+        distance=distance, 
+        pace_in_min=slider_pace_in_min, 
+        vo2_max=vo2_max, 
+        bodyweight=bodyweight, 
+        total_carb_intake=additional_carb_intake, 
+        inital_endogenous_glycogen=total_endogenous_glycogen_storage
+    )
+    
     return render(request, 'simulation/simulation_results.html', 
                 {'glycogen_buffer': glycogen_buffer,
                 'distance': distance,
@@ -84,5 +152,6 @@ def update_dashboard(request):
                 'additional_carb_intake': additional_carb_intake,
                 'total_available_glycogen': total_available_glycogen,
                 'interpretation': interpretation,
-                'indication': indication
+                'indication': indication,
+                'chart': create_chart(df, glycogen_buffer),
                 })

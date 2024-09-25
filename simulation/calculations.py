@@ -1,5 +1,6 @@
 import datetime 
 import math
+import pandas as pd
 from .import runners
 
 R_C = 120
@@ -87,6 +88,11 @@ def convert_minutes_to_time(minutes: float, hours: bool=False) -> datetime.time:
 
     return: The converted minutes in datetime.time
     """
+    if minutes == 0 and hours:
+        return datetime.time(0, 0, 0).strftime("%H:%M:%S")
+    elif minutes == 0 and not hours:
+        return datetime.time(0, 0, 0).strftime("%M:%S")
+    
     hours = math.floor(minutes / 60)
     mins = math.floor(minutes % 60)
     seconds = int(minutes % math.floor(minutes) * 60)  # use np.round once imported
@@ -127,25 +133,68 @@ def print_marathon_predictions(runner: runners.Runner) -> None:
             print(f"It is very unlikely that the runner will be able to finish the race with target intensity of {intensity * 100} % and pace of {convert_minutes_to_time(43 * pace_in_minutes)}.")
         print()
 
+def get_carb_intake_schedule(distance: float) -> list:
+    """
+    Get the kilometer marks at which the carbohydrate intake should take place. 
 
-# to be continued:
-# create class to simulate marathon with input Runner, PacingStrategy, and NutritionStrategy (-> pandas df)
+    For distances less or equal to 10 km it should be at the rounded down halfway mark. 
+    For distances larger than 10 km it should be every 5 kilometers.
 
-if __name__ == "__main__":
-    from runners import Runner
+    Parameters:
+    distance (float): The distance in kilometers
 
-    seb = Runner("Seb", 55, datetime.date(1984, 1, 22), 73)
+    Returns:
+        A list of kilometer marks at which the carbohydrate intake should take place.
+    """
+    if distance <= 10:
+        # For distances less or equal to 10 km it should be at the rounded down halfway mark
+        return [int(distance / 2)]
+    else:
+        # For distances larger than 10 km it should be every 5 kilometers
+        if distance % 5 == 0:
+            intakes = math.floor(distance) // 5 - 1
+        else: 
+            intakes = math.floor(distance) // 5
+        
+        return [5 * i for i in range(1, intakes + 1)]
 
-    seb.inject_carbohydrates(150)
+        
+def time_series(distance: float, pace_in_min: float, vo2_max: float, bodyweight: float, total_carb_intake: float, inital_endogenous_glycogen: float) -> pd.DataFrame:
+    """
+    Generate a pandas DataFrame containing the time series of the race.
 
-    print_marathon_predictions(runner=seb)
+    The DataFrame contains the following columns:
+    - `Distance`: The distance in kilometers.
+    - `CumTime`: The cumulative time in hours.
+    - `CumEnergyExpenditure`: The cumulative energy expenditure in kilocalories.
+    - `CumGlycogenOxidation`: The cumulative glycogen oxidation in kilocalories.
+    - `CarbInjection`: The carbohydrate injection in grams at the current distance.
+    - `CumCarbInjection`: The cumulative carbohydrate injection in grams.
+    - `GlycogenLevelsPlusCarbs`: The glycogen levels in the body plus the injected carbohydrates in kilocalories.
 
-    paces = [4 + i / 5 for i in range(20)]
+    Parameters:
+    distance (float): The distance in kilometers.
+    pace_in_min (float): The pace in minutes per kilometer.
+    vo2_max (float): The runner's VO2max in milliliters per kilogram per minute.
+    bodyweight (float): The runner's bodyweight in kilograms.
+    total_carb_intake (float): The total carbohydrate intake in grams.
+    inital_endogenous_glycogen (float): The initial endogenous glycogen storage in the body in kilocalories.
+
+    Returns:
+        A pandas DataFrame with the time series of the race.
+    """
+    vo2 = convert_pace_to_vo2(pace_in_min, vo2_max, bodyweight)
+    carb_intakes = get_carb_intake_schedule(distance)
+    carbs_per_intake = total_carb_intake / len(carb_intakes)
+    kms = [i for i in range(math.ceil(distance) + 1)]
+    time = [convert_minutes_to_time(i * pace_in_min) for i in kms]
+    energy_expenditure = [get_energy_expenditure(bodyweight, i) for i in kms]
+    initial_glycogen = inital_endogenous_glycogen
+    perc_glycogen_oxidation = get_perc_glycogen_oxidation(vo2, vo2_max)
+    glycogen_expenditure = [perc_glycogen_oxidation * i for i in energy_expenditure]
+    carb_injection = [carbs_per_intake * 4 if i in carb_intakes else 0 for i in kms]
+    df = pd.DataFrame({'Distance': kms, 'CumTime': time,'CumEnergyExpenditure': energy_expenditure, 'CumGlycogenOxidation': glycogen_expenditure, 'CarbInjection': carb_injection})
+    df["CumCarbInjection"] = df["CarbInjection"].cumsum()
+    df["GlycogenLevelsPlusCarbs"] = initial_glycogen - df["CumGlycogenOxidation"] + df["CumCarbInjection"]
     
-    for pace in paces:
-        converted_vo2 = convert_pace_to_vo2(pace, seb.vo2_max, seb.bodyweight)
-        energy_expenditure = seb.bodyweight * 60 / pace
-        liters_oxygen_per_hour = energy_expenditure / 5
-        liters_oxygen_per_minute = liters_oxygen_per_hour / 60
-        simple_vo2 = liters_oxygen_per_minute / seb.bodyweight *1000
-        print(int((converted_vo2-simple_vo2) * 100))        
+    return df
