@@ -8,11 +8,15 @@
 <div class="container my-5">
   <div class="row">
     <div class="col col-lg-3">
-      <h1>Input</h1>
-      
       <form method="post">
         {% csrf_token %}
-        <div style="display: block;">
+        <h1>Input</h1>
+        <div style="display: block;" class="my-3">
+          <label for="paceRange" style="display: block;">Target pace</label>
+          <input type="range" min="2.5" max="7" value="5.0" step="0.01" id="paceRange" name="paceRange" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" hx-vals='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+          <div id="sliderValue">5:00 min/km</div>
+        </div>
+        <div style="display: block;" class="my-3">
           <label for="vo2_max" style="display: block;">VO<sub>2</sub>max</label>
           <div style="display: flex;">
             <input class="custom-css-input-field" type="number" min="0" max="100" value="56" id="vo2_max" name="vo2_max" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
@@ -68,11 +72,18 @@
           </div>
           <small id="LegMuscleGlycogenDensityHelp" class="form-text text-muted" style="display: block;">Enter the runner's leg muscle glycogen density.</small>
         </div>
+        <div style="display: block;" class="my-3">
+          <label for="AdditionalCarbIntake" style="display: block;">Carb intake during race</label>
+          <div style="display: flex;">
+            <input class="custom-css-input-field" type="number" min="0" max="300" value="0" id="AdditionalCarbIntake" name="AdditionalCarbIntake" hx-post="{% url 'update_dashboard' %}" hx-trigger="change" hx-target="#simultion-results-display" hx-indicator="#loading-indicator" style="display: block;" />
+            <span class="ms-2"> g</span>
+          </div>
+          <small id="AdditionalCarbIntakeHelp" class="form-text text-muted" style="display: block;">Enter the additional carb intake (e.g. through gels) during the race.</small>
+        </div>
       </form>
     </div>
-    
-    
-    
+  
+  
     <div class="col col-lg-9">
       <div id="simultion-results-display"></div>
       <div id="loading-indicator" style="display: none;">Loading...</div>
@@ -80,4 +91,15 @@
   </div>
 </div>
 
+<script>
+  var sliderValue = document.getElementById('sliderValue');
+  var slider = document.getElementById('paceRange');
+
+  slider.oninput = function() {
+    var totalSeconds = this.value * 60; // Convert minutes to seconds
+    var minutes = Math.floor(totalSeconds / 60);
+    var remainingSeconds = Math.floor(totalSeconds % 60);
+    sliderValue.textContent = minutes + ":" + (remainingSeconds < 10 ? '0' : '') + remainingSeconds + " min/km";
+  }
+  </script>
 {% endblock %}

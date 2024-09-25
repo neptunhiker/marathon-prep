@@ -18,6 +18,8 @@ class AboutView(TemplateView):
 
 @require_POST
 def update_dashboard(request):
+    print("calling")
+    slider_pace_in_min = float(request.POST.get('paceRange', 0))
     bodyweight = float(request.POST.get('bodyweight', 0))
     glycogen_buffer = bodyweight * 3 * 4  # 3g per kg of bodyweight (* 4 for kcals)
     distance = float(request.POST.get('distance', 0))
@@ -31,42 +33,56 @@ def update_dashboard(request):
     leg_muscle_glycogen_density = float(request.POST.get('LegMuscleGlycogenDensity', 0))
     leg_muscle_glycogen_storage = leg_muscle_mass * leg_muscle_glycogen_density
     total_endogenous_glycogen_storage = liver_glycogen_storage + leg_muscle_glycogen_storage
-    runner = runners.Runner(
-        name="Bob the Runner",
-        vo2_max=vo2_max,
-        bodyweight=bodyweight,
-        liver_mass_perc=relative_liver_mass,
-        liver_glycogen_density=liver_glycogen_density,
-        leg_muscles_mass_perc=relative_leg_muscle_mass,
-        leg_muscles_glycogen_density=leg_muscle_glycogen_density,
-        )
-    intensities = [0.65, 0.70, 0.72, 0.74, 0.76, 0.78, 0.80, 0.85, 0.90]
-    vo2s = [runner.vo2_max * intensity for intensity in intensities]
-    sim_results = {}
-    for vo2 in vo2s:
-        pace_in_minutes = calculations.convert_vo2_to_pace_in_min(vo2, runner.vo2_max, runner.bodyweight)
-        pace_in_hours = calculations.convert_minutes_to_time(pace_in_minutes)
-        total_minutes = pace_in_minutes * distance
-        calories_burned = calculations.get_energy_expenditure(runner.bodyweight, distance)
-        glycogen_consumed = calculations.get_perc_glycogen_oxidation(vo2, runner.vo2_max) * calories_burned
-        residual_glycogen = total_endogenous_glycogen_storage - glycogen_consumed
-        sim_results[vo2] = {
-            "percent_vo2_max": vo2 / runner.vo2_max * 100,
-            "pace": pace_in_hours,
-            "finishing_time": calculations.convert_minutes_to_time(minutes=total_minutes, hours=True),
-            "glycogen_consumed": glycogen_consumed,
-            "residual_glycogen": residual_glycogen
-            }
-    
+    additional_carb_intake = float(request.POST.get('AdditionalCarbIntake', 0))
+    total_available_glycogen = total_endogenous_glycogen_storage + additional_carb_intake * 4
+
+    vo2 = calculations.convert_pace_to_vo2(slider_pace_in_min, vo2_max, bodyweight)
+    intensity = vo2 / vo2_max
+    pace_in_hours = calculations.convert_minutes_to_time(slider_pace_in_min)
+    total_minutes = slider_pace_in_min * distance
+    calories_burned = calculations.get_energy_expenditure(bodyweight, distance)
+    glycogen_consumed = calculations.get_perc_glycogen_oxidation(vo2, vo2_max) * calories_burned
+    percent_glycogen_consumed = glycogen_consumed / calories_burned * 100
+    residual_glycogen = total_available_glycogen - glycogen_consumed
+    finishing_time = calculations.convert_minutes_to_time(minutes=total_minutes, hours=True)
+    glycogen_buffer = bodyweight * 3 * 4
+    if residual_glycogen <= 0: 
+        indication = "negative"
+        interpretation = f"It is highly improbable that the race can be completed within the predicted finishing time of {finishing_time}, as the residual glycogen level at the end of the race is negative. This strongly suggests that the runner is likely to experience 'hitting the wall,' leading to substantial performance decline during the race, which would prevent achieving the projected time. A reduction in pace is advised to lower the rate of glycogen depletion throughout the race."
+    elif residual_glycogen <= glycogen_buffer:
+        indication = "warning"
+        interpretation = f"There is uncertainty regarding the ability to complete the race within the predicted finishing time of {finishing_time}, as residual glycogen levels are below 3g per kg of body weight by the end of the race (equivalent to {round(glycogen_buffer)} kcals). Studies indicate that performance may deteriorate prior to full glycogen depletion. It is recommended to either reduce the pace to conserve glycogen stores or increase glycogen availability through higher intial endogenous glycogen levels or carbohydrate supplementation during the race."
+        if intensity > 0.8:
+            additional_info = f"Additionally, the race is planned to be run at an intensity of {round(intensity * 100, 1)} %, as measured by the percentage of oxygen uptake (VO2) relative to maximal oxygen uptake capacity (VO2_max) which represents a considerable physiological challenge."
+            interpretation = f"{interpretation} {additional_info}"
+    else:
+        indication = "positive"
+        interpretation = f"It is possible that the race can be completed within the predicted finishing time of {finishing_time}, as residual glycogen levels are sufficiently high at the end of the race. However, other physiological factors may still prevent the predicted finishing time from being achieved."
+        if intensity > 0.8:
+            indication = "warning"
+            additional_info = f"One contributing factor may be the intensity at which the race is planned to be run. An intensity of {round(intensity * 100, 1)} %, as measured by the percentage of oxygen uptake (VO2) relative to maximal oxygen uptake capacity (VO2_max), represents a considerable physiological challenge."
+            interpretation = f"{interpretation} {additional_info}"
+
+
     return render(request, 'simulation/simulation_results.html', 
-                  {'glycogen_buffer': glycogen_buffer,
-                   'distance': distance,
-                   'bodyweight': bodyweight,
-                   'calories_burned': calculations.get_energy_expenditure(bodyweight, distance),
-                   'liver_mass': liver_mass,
-                   'liver_glycogen_storage': liver_glycogen_storage,
-                   'leg_muscle_mass': leg_muscle_mass,
-                   'leg_muscle_glycogen_storage': leg_muscle_glycogen_storage,
-                   'total_endogenous_glycogen_storage': total_endogenous_glycogen_storage,
-                   'sim_results': sim_results,
-                   })
+                {'glycogen_buffer': glycogen_buffer,
+                'distance': distance,
+                'bodyweight': bodyweight,
+                'calories_burned': calculations.get_energy_expenditure(bodyweight, distance),
+                'liver_mass': liver_mass,
+                'liver_glycogen_storage': liver_glycogen_storage,
+                'leg_muscle_mass': leg_muscle_mass,
+                'leg_muscle_glycogen_storage': leg_muscle_glycogen_storage,
+                'total_endogenous_glycogen_storage': total_endogenous_glycogen_storage,
+                'finishing_time': finishing_time,
+                'residual_glycogen': residual_glycogen,
+                'intensity': intensity * 100,
+                'vo2': vo2,
+                'pace': pace_in_hours,
+                'glycogen_consumed': glycogen_consumed,
+                'percent_glycogen_consumed': percent_glycogen_consumed,
+                'additional_carb_intake': additional_carb_intake,
+                'total_available_glycogen': total_available_glycogen,
+                'interpretation': interpretation,
+                'indication': indication
+                })
